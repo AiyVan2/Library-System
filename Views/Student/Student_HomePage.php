@@ -2,15 +2,6 @@
 session_start();
 include '../../Config/db.php';
 
-// Handle Delete
-if (isset($_POST['delete_author'])) {
-    $book_id = $_POST['book_id'];
-    $conn->query("DELETE FROM books WHERE book_id = $book_id");
-    $_SESSION['message'] = "Author deleted successfully";
-    header('Location: Books_Page.php');
-    exit();
-}
-
 // Modified query to join with authors and genres tables
 $result = $conn->query("
     SELECT 
@@ -44,23 +35,14 @@ $books = $result->fetch_all(MYSQLI_ASSOC);
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
-                <!-- <div class="flex items-center space-x-4">
-                    <a href="manage_users.php" class="text-gray-600 hover:text-gray-800">Users</a>
-                    <a href="manage_authors.php" class="text-gray-600 hover:text-gray-800">Authors</a>
-                    <a href="manage_books.php" class="text-gray-600 hover:text-gray-800">Books</a>
-                    <a href="manage_genres.php" class="text-gray-600 hover:text-gray-800">Genres</a>
-                </div> -->
             </div>
         </div>
     </nav>
 
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Manage Books</h1>
-            <a href="manage_books.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                <i class="fas fa-plus mr-2"></i> Add New Books
-            </a>
+        <div class="flex justify-center items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Library Books</h1>
         </div>
 
         <!-- Success Message -->
@@ -90,8 +72,6 @@ $books = $result->fetch_all(MYSQLI_ASSOC);
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Description
-                        </th> <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Action
                         </th>
                     </tr>
                 </thead>
@@ -113,23 +93,6 @@ $books = $result->fetch_all(MYSQLI_ASSOC);
                             <td class="px-6 py-4">
                                 <div class="text-gray-900 line-clamp-2"><?php echo htmlspecialchars($book['description']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex space-x-3">
-                                    <a href="edit_author.php?id=<?php echo $book['book_id']; ?>" 
-                                       class="text-blue-500 hover:text-blue-700">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <form action="" method="POST" class="inline" 
-                                          onsubmit="return confirm('Are you sure you want to delete this author?');">
-                                        <input type="hidden" name="book_id" value="<?php echo $book['author_id']; ?>">
-                                        <button type="submit" name="delete_author" 
-                                                class="text-red-500 hover:text-red-700">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>

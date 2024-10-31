@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if($row['role'] == 'admin'){
             (header('Location: ../Views/Admin/Admin_Page.php'));
         } else{
-            (header('Location: ../Views/Student/Home_page.html'));
+            (header('Location: ../Views/Student/Student_HomePage.php'));
         }
     }
 }

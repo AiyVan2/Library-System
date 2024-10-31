@@ -27,6 +27,10 @@ $genreCount = $conn->query("SELECT COUNT(*) as count FROM genres")->fetch_assoc(
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
+                <a href="../../index.html" class="text-gray-600 hover:text-blue-600 flex items-center transition duration-200 space-x-3">
+                <i class="fas fa-right-from-bracket"></i>
+                    <span class="mr-2">Log Out</span>
+                </a>
                 <!-- <div class="flex items-center space-x-4">
                     <a href="manage_users.php" class="text-gray-600 hover:text-gray-800">Users</a>
                     <a href="manage_authors.php" class="text-gray-600 hover:text-gray-800">Authors</a>

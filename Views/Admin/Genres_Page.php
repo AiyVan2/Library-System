@@ -11,6 +11,34 @@ if (isset($_POST['delete_author'])) {
     exit();
 }
 
+// Handle Edit (AJAX)
+if (isset($_POST['action']) && $_POST['action'] == 'update_genre') {
+    $genre_id = $_POST['genre_id'];
+    $genre_name = $_POST['genre_name'];
+    
+    $stmt = $conn->prepare("UPDATE genres SET genre_name = ? WHERE genre_id = ?");
+    $stmt->bind_param("si", $genre_name, $genre_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Author updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Error updating author']);
+    }
+    exit();
+}
+
+// Fetch author details for modal (AJAX)
+if (isset($_GET['action']) && $_GET['action'] == 'get_genre') {
+    $genre_id = $_GET['genre_id'];
+    $stmt = $conn->prepare("SELECT * FROM genres WHERE genre_id = ?");
+    $stmt->bind_param("i", $genre_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $author = $result->fetch_assoc();
+    echo json_encode($author);
+    exit();
+}
+
 // Fetch all authors
 $result = $conn->query("SELECT * FROM genres ORDER BY genre_name");
 $genres = $result->fetch_all(MYSQLI_ASSOC);
@@ -83,7 +111,7 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <div class="flex space-x-3">
-                                    <a href="edit_author.php?id=<?php echo $genre['genre_id']; ?>" 
+                                    <a href="javascript:void(0)" onclick="openModal(<?php echo $genre['genre_id']; ?>)"
                                        class="text-blue-500 hover:text-blue-700">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
@@ -103,5 +131,83 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
             </table>
         </div>
     </div>
+    <!-- Edit Genre Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Genre</h3>
+                    <form id="editGenreForm" class="mt-4">
+                        <input type="hidden" id="edit_genre_id" name="genre_id">
+                        <input type="hidden" name="action" value="update_genre">
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                                Name
+                            </label>
+                            <input type="text" id="edit_genre_name" name="genre_name" required
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()"
+                                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
+<script>
+        function openModal(genreId) {
+            // Fetch author details
+            fetch(`?action=get_genre&genre_id=${genreId}`)
+                .then(response => response.json())
+                .then(genre => {
+                    document.getElementById('edit_genre_id').value = genre.genre_id;
+                    document.getElementById('edit_genre_name').value = genre.genre_name;
+                    document.getElementById('editModal').classList.remove('hidden');
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.getElementById('editGenreForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal();
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the author');
+            });
+        });
+    </script>
 </html>

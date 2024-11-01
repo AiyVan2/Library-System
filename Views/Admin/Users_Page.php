@@ -11,6 +11,35 @@ if (isset($_POST['delete_user'])) {
     exit();
 }
 
+// Handle Edit (AJAX)
+if (isset($_POST['action']) && $_POST['action'] == 'update_user') {
+    $user_id = $_POST['user_id'];
+    $email = $_POST['email'];
+    $role = $_POST['role'];
+    
+    $stmt = $conn->prepare("UPDATE users SET email = ?, role = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $email, $role, $user_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Error updating user']);
+    }
+    exit();
+}
+
+// Fetch user details for modal (AJAX)
+if (isset($_GET['action']) && $_GET['action'] == 'get_user') {
+    $user_id = $_GET['user_id'];
+    $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+    echo json_encode($user);
+    exit();
+}
+
 // Fetch users grouped by role
 $admin_result = $conn->query("SELECT * FROM users WHERE role = 'admin' ORDER BY email");
 $admins = $admin_result->fetch_all(MYSQLI_ASSOC);
@@ -92,7 +121,7 @@ $students = $student_result->fetch_all(MYSQLI_ASSOC);
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex space-x-3">
-                                        <a href="edit_user.php?id=<?php echo $user['id']; ?>" 
+                                        <a href="javascript:void(0)" onclick="openModal(<?php echo $user['id']; ?>)"
                                            class="text-blue-500 hover:text-blue-700">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
@@ -147,7 +176,7 @@ $students = $student_result->fetch_all(MYSQLI_ASSOC);
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex space-x-3">
-                                        <a href="edit_user.php?id=<?php echo $user['id']; ?>" 
+                                      <a href="javascript:void(0)" onclick="openModal(<?php echo $user['id']; ?>)"
                                            class="text-blue-500 hover:text-blue-700">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
@@ -166,7 +195,92 @@ $students = $student_result->fetch_all(MYSQLI_ASSOC);
                     </tbody>
                 </table>
             </div>
+            <!-- Edit User Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Edit User</h3>
+                <form id="editUserForm" class="mt-4">
+                    <input type="hidden" id="edit_user_id" name="user_id">
+                    <input type="hidden" name="action" value="update_user">
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                            Email
+                        </label>
+                        <input type="email" id="edit_email" name="email" 
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="role">
+                            Role
+                        </label>
+                        <select id="edit_role" name="role" 
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="admin">Admin</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()"
+                                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+
+        </div>
+    </div>
+    <script>
+        function openModal(userId) {
+            // Fetch user details
+            fetch(`?action=get_user&user_id=${userId}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('edit_user_id').value = user.id;
+                    document.getElementById('edit_email').value = user.email;
+                    document.getElementById('edit_role').value = user.role;
+                    document.getElementById('editModal').classList.remove('hidden');
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        document.getElementById('editUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal();
+                    // Reload the page to show updated data
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the user');
+            });
+        });
+    </script>
 </body>
 </html>

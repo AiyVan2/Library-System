@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("s", $genre_name);
 
     if ($stmt->execute()) {
-        echo "Signup successful!";
+        (header('Location: ../Views/Admin/Books_Page.php'));
     } else {
         echo "Error: " . $stmt->error;
     }

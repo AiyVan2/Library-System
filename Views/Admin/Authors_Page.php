@@ -7,7 +7,7 @@ if (isset($_POST['delete_author'])) {
     $author_id = $_POST['author_id'];
     $conn->query("DELETE FROM authors WHERE author_id = $author_id");
     $_SESSION['message'] = "Author deleted successfully";
-    header('Location: manage_authors.php');
+    header('Location: Authors_Page.php');
     exit();
 }
 
@@ -56,10 +56,10 @@ $authors = $result->fetch_all(MYSQLI_ASSOC);
 </head>
 <body class="bg-gray-100">
     <!-- Header -->
-    <nav class="bg-white shadow-md">
+    <nav class="bg-blue-200 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
-                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-gray-800 hover:text-blue-600">
+                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-stone-950 hover:text-blue-600">
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
@@ -71,9 +71,21 @@ $authors = $result->fetch_all(MYSQLI_ASSOC);
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800">Manage Authors</h1>
-            <a href="add_author.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+            <a href="manage_authors.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
                 <i class="fas fa-plus mr-2"></i> Add New Author
             </a>
+        </div>
+
+        <!-- Search Box -->
+       <div class="mb-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="fas fa-search text-gray-500"></i>
+                </span>
+                <input type="text" id="searchInput" 
+                       class="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Search authors...">
+            </div>
         </div>
 
         <!-- Success Message -->
@@ -100,7 +112,7 @@ $authors = $result->fetch_all(MYSQLI_ASSOC);
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody id="authorTableBody"class="bg-white divide-y divide-gray-200">
                     <?php foreach ($authors as $author): ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -173,6 +185,23 @@ $authors = $result->fetch_all(MYSQLI_ASSOC);
     </div>
 
     <script>
+         // Search functionality
+         document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchValue = e.target.value.toLowerCase();
+            const tableBody = document.getElementById('authorTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const authorName = row.getElementsByTagName('td')[0].textContent.toLowerCase();
+                if (authorName.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+
+
         function openModal(authorId) {
             // Fetch author details
             fetch(`?action=get_author&author_id=${authorId}`)

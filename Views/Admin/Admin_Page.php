@@ -20,14 +20,14 @@ $genreCount = $conn->query("SELECT COUNT(*) as count FROM genres")->fetch_assoc(
 </head>
 <body class="bg-gray-100">
    <!-- Header -->
-   <nav class="bg-white shadow-md">
+   <nav class="bg-blue-200 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
-                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-gray-800 hover:text-blue-600">
+                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-stone-950 hover:text-blue-600">
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
-                <a href="../../index.html" class="text-gray-600 hover:text-blue-600 flex items-center transition duration-200 space-x-3">
+                <a href="../../index.html" class="text-stone-950 hover:text-blue-600 flex items-center transition duration-200 space-x-3">
                 <i class="fas fa-right-from-bracket"></i>
                     <span class="mr-2">Log Out</span>
                 </a>

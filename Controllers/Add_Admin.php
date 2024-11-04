@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("sss", $email, $password, $role);
 
     if ($stmt->execute()) {
-        echo "Signup successful!";
+       (header('Location:../Views/Admin/User_Page.php'));
     } else {
         echo "Error: " . $stmt->error;
     }

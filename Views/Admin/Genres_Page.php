@@ -56,10 +56,10 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
 <body class="bg-gray-100">
 
 <!-- Header -->
-<nav class="bg-white shadow-md">
+<nav class="bg-blue-200 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
-                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-gray-800 hover:text-blue-600">
+                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-stone-950 hover:text-blue-600">
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
@@ -82,6 +82,18 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
             </a>
         </div>
 
+       <!-- Search Box -->
+       <div class="mb-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="fas fa-search text-gray-500"></i>
+                </span>
+                <input type="text" id="searchInput" 
+                       class="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Search genres...">
+            </div>
+        </div>
+
         <!-- Success Message -->
         <?php if (isset($_SESSION['message'])): ?>
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -90,8 +102,8 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
             </div>
         <?php endif; ?>
 
-        <!-- Authors Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+      <!-- Genres Table -->
+      <div class="bg-white rounded-lg shadow overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -103,7 +115,7 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody id="genreTableBody" class="bg-white divide-y divide-gray-200">
                     <?php foreach ($genres as $genre): ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -131,6 +143,7 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
             </table>
         </div>
     </div>
+
     <!-- Edit Genre Modal -->
     <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -164,6 +177,23 @@ $genres = $result->fetch_all(MYSQLI_ASSOC);
     </div>
 </body>
 <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchValue = e.target.value.toLowerCase();
+            const tableBody = document.getElementById('genreTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const genreName = row.getElementsByTagName('td')[0].textContent.toLowerCase();
+                if (genreName.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+
+
         function openModal(genreId) {
             // Fetch author details
             fetch(`?action=get_genre&genre_id=${genreId}`)

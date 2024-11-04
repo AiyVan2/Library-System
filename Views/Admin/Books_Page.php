@@ -2,6 +2,10 @@
 session_start();
 include '../../Config/db.php';
 
+// Initialize search parameters
+$search_term = isset($_GET['search']) ? $_GET['search'] : '';
+$search_type = isset($_GET['search_type']) ? $_GET['search_type'] : 'title';
+
 // Handle Delete
 if (isset($_POST['delete_book'])) {
     $book_id = $_POST['book_id'];
@@ -52,8 +56,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_book') {
     exit();
 }
 
-// Fetch all books
-$result = $conn->query("
+// Build the SQL query based on search parameters
+$base_query = "
     SELECT 
         books.*, 
         authors.name AS author_name,
@@ -61,8 +65,27 @@ $result = $conn->query("
     FROM books 
     LEFT JOIN authors ON books.author_id = authors.author_id
     LEFT JOIN genres ON books.genre_id = genres.genre_id
-    ORDER BY books.title
-");
+";
+
+if (!empty($search_term)) {
+    switch ($search_type) {
+        case 'title':
+            $base_query .= " WHERE books.title LIKE '%" . $conn->real_escape_string($search_term) . "%'";
+            break;
+        case 'author':
+            $base_query .= " WHERE authors.name LIKE '%" . $conn->real_escape_string($search_term) . "%'";
+            break;
+        case 'genre':
+            $base_query .= " WHERE genres.genre_name LIKE '%" . $conn->real_escape_string($search_term) . "%'";
+            break;
+        case 'year':
+            $base_query .= " WHERE YEAR(books.publication_date) = '" . $conn->real_escape_string($search_term) . "'";
+            break;
+    }
+}
+
+$base_query .= " ORDER BY books.title";
+$result = $conn->query($base_query);
 $books = $result->fetch_all(MYSQLI_ASSOC);
 
 // Fetch authors and genres for dropdowns
@@ -82,14 +105,14 @@ $genres = $conn->query("SELECT genre_id, genre_name FROM genres ORDER BY genre_n
 <body class="bg-gray-100">
 
 <!-- Header -->
-<nav class="bg-white shadow-md">
+<nav class="bg-blue-200 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
-                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-gray-800 hover:text-blue-600">
+                <a href="Admin_Page.php" class="flex items-center space-x-3 text-xl font-bold text-stone-950 hover:text-blue-600">
                     <i class="fas fa-book-reader"></i>
                     <span>Library System</span>
                 </a>
-                <!-- <div class="flex items-center space-x-4">
+                <!--<div class="flex items-center space-x-4">
                     <a href="manage_users.php" class="text-gray-600 hover:text-gray-800">Users</a>
                     <a href="manage_authors.php" class="text-gray-600 hover:text-gray-800">Authors</a>
                     <a href="manage_books.php" class="text-gray-600 hover:text-gray-800">Books</a>
@@ -98,6 +121,7 @@ $genres = $conn->query("SELECT genre_id, genre_name FROM genres ORDER BY genre_n
             </div>
         </div>
     </nav>
+    
 
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
@@ -108,39 +132,88 @@ $genres = $conn->query("SELECT genre_id, genre_name FROM genres ORDER BY genre_n
             </a>
         </div>
 
-        <!-- Success Message -->
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline"><?php echo $_SESSION['message']; ?></span>
-                <?php unset($_SESSION['message']); ?>
+     <!-- Search Form -->
+    <div class="mb-6 bg-white rounded-lg shadow p-6">
+        <form action="" method="GET" class="flex flex-wrap gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <input 
+                    type="text" 
+                    name="search" 
+                    value="<?php echo htmlspecialchars($search_term); ?>"
+                    placeholder="Enter search term..." 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
             </div>
-        <?php endif; ?>
+            <div class="w-48">
+                <select 
+                    name="search_type" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    <option value="title" <?php echo $search_type === 'title' ? 'selected' : ''; ?>>Search by Title</option>
+                    <option value="author" <?php echo $search_type === 'author' ? 'selected' : ''; ?>>Search by Author</option>
+                    <option value="genre" <?php echo $search_type === 'genre' ? 'selected' : ''; ?>>Search by Genre</option>
+                    <option value="year" <?php echo $search_type === 'year' ? 'selected' : ''; ?>>Search by Year</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button 
+                    type="submit" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center"
+                >
+                    <i class="fas fa-search mr-2"></i> Search
+                </button>
+                <a 
+                    href="<?php echo $_SERVER['PHP_SELF']; ?>" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center"
+                >
+                    <i class="fas fa-undo mr-2"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
 
-        <!-- Authors Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Book Title
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Publication Date
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Author
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Genre
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Description
-                        </th> <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Action
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+    <!-- Results count -->
+    <?php if (!empty($search_term)): ?>
+    <div class="mb-4 text-gray-600">
+        Found <?php echo count($books); ?> result(s) for: <?php echo htmlspecialchars($search_term); ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Success Message -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline"><?php echo $_SESSION['message']; ?></span>
+            <?php unset($_SESSION['message']); ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- Books Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Book Title
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Publication Date
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Author
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Genre
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Description
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (count($books) > 0): ?>
                     <?php foreach ($books as $book): ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -158,29 +231,35 @@ $genres = $conn->query("SELECT genre_id, genre_name FROM genres ORDER BY genre_n
                             <td class="px-6 py-4">
                                 <div class="text-gray-900 line-clamp-2"><?php echo htmlspecialchars($book['description']); ?></div>
                             </td>
-                           <!-- Update the Edit link in the table -->
-    <td class="px-6 py-4 whitespace-nowrap text-sm">
-        <div class="flex space-x-3">
-            <a href="javascript:void(0)" onclick="openModal(<?php echo $book['book_id']; ?>)"
-               class="text-blue-500 hover:text-blue-700">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            <form action="" method="POST" class="inline" 
-                  onsubmit="return confirm('Are you sure you want to delete this book?');">
-                <input type="hidden" name="book_id" value="<?php echo $book['book_id']; ?>">
-                <button type="submit" name="delete_book" 
-                        class="text-red-500 hover:text-red-700">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </form>
-        </div>
-    </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex space-x-3">
+                                    <a href="javascript:void(0)" onclick="openModal(<?php echo $book['book_id']; ?>)"
+                                       class="text-blue-500 hover:text-blue-700">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <form action="" method="POST" class="inline" 
+                                          onsubmit="return confirm('Are you sure you want to delete this book?');">
+                                        <input type="hidden" name="book_id" value="<?php echo $book['book_id']; ?>">
+                                        <button type="submit" name="delete_book" 
+                                                class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            No books found matching your search criteria.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
+</div>
 
      <!-- Add Edit Modal -->
      <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">

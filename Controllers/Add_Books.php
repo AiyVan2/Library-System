@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Execute the statement
     if ($stmt->execute()) {
-        echo "Book added successfully!";
+       (header('Location: ../Views/Admin/Books_Page.php'));
     } else {
         echo "Error: " . $stmt->error;
     }

@@ -201,6 +201,7 @@ $authors = $result->fetch_all(MYSQLI_ASSOC);
             }
         });
 
+        
 
         function openModal(authorId) {
             // Fetch author details
